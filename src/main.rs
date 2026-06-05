@@ -1,4 +1,5 @@
 mod cli;
+mod config;
 mod commands;
 mod ctx;
 
@@ -21,7 +22,7 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Setup(args) => commands::setup::handle(args)?,
+        Commands::Setup(args) => commands::setup::handle(cli.db, args)?,
         _ => {
             let mut ctx = Ctx {
                 connection: &mut establish_connection(cli.db),

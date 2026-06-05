@@ -6,7 +6,7 @@ use std::path::PathBuf;
 #[command(author, version, about)]
 pub struct Cli {
     /// Path to the music library database
-    #[arg(short, long)] //make this global=true idk?
+    #[arg(short, long, required=false)] //make this global=true idk?
     pub db: PathBuf,
 
     #[command(subcommand)]
