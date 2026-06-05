@@ -1,3 +1,4 @@
 /target
 migrations/.diesel_lock
 migrations/.keep
+.DS_Store
