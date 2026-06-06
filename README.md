@@ -1,5 +1,3 @@
 # musicl
 
-`musicl` intends to be a music library manager that allows creation of a music library with adding and removing songs, and flexible querying of the library. 
-
-It is written in Rust but is still in very early development and may never be completed, I am writing it as a replacement for a PowerShell module that performs the same task with the wrong tools.
+`musicl` intends to be a minimal music library manager that supports adding songs to a library folder, using metadata to manage the file structure. It will support archiving, unarchiving and removing songs from the library.
