@@ -2,3 +2,4 @@
 migrations/.diesel_lock
 migrations/.keep
 .DS_Store
+/tests/data
