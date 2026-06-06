@@ -1,5 +1,3 @@
-use diesel::sqlite::SqliteConnection;
-
-pub struct Ctx<'a> {
-    pub connection: &'a mut SqliteConnection,
+pub struct Ctx {
+    pub status_path: std::path::PathBuf,
 }

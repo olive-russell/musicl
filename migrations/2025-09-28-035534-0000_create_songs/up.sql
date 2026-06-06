@@ -1,5 +1,0 @@
--- Your SQL goes here
-CREATE TABLE songs (
-    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    path TEXT NOT NULL UNIQUE
-);
