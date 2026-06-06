@@ -11,22 +11,11 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
-    Init {
-    },
-    Add {
-        path: std::path::PathBuf,
-    },
-    Archive {
-        path: std::path::PathBuf,
-    },
-    Unarchive {
-        path: std::path::PathBuf,
-    },
-    Remove {
-        path: std::path::PathBuf,
-    },
-    Check {
-    },
-    Clean {
-    },
+    Init {},
+    Add { path: std::path::PathBuf },
+    Archive { path: std::path::PathBuf },
+    Unarchive { path: std::path::PathBuf },
+    Remove { path: std::path::PathBuf },
+    Check {},
+    Clean {},
 }

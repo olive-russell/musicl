@@ -5,7 +5,7 @@ use crate::ctx::Ctx;
 
 pub fn handle(ctx: &mut Ctx, path: PathBuf) -> Result<()> {
     let _ = ctx;
-    println!("Adding: {:?}", path);
     _ = ctx.connection;
+    println!("Adding: {:?}", path);
     Ok(())
 }
