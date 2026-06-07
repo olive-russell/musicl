@@ -1,10 +1,9 @@
 mod common;
 
-// use assert_cmd::Command;
-use std::fs;
+use std::{fs, path::PathBuf};
 use tempfile::tempdir;
 
-// use crate::common::run_musicl;
+use crate::common::assert_file_contents_eq;
 
 #[test]
 fn init_creates_library() {
@@ -40,7 +39,5 @@ fn init_does_not_modify_status() {
 
     // Check status exists and contents have not changed
     assert!(temp_dir.path().join(".musicl").join("status").is_file());
-    let actual = fs::read_to_string(temp_dir.path().join(".musicl/status")).expect("Couldn't read status file.");
-    let expected = fs::read_to_string("tests/data/tiny_library/.musicl/status",).expect("Couldn't read exemplar");
-    assert_eq!(actual, expected);
+    assert_file_contents_eq(temp_dir.path().join(".musicl/status"), PathBuf::from("tests/data/tiny_library/.musicl/status"));
 }
