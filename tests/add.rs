@@ -10,7 +10,7 @@ fn add_rejects_bad_metadata() {
     // Create demo library, place a bad file at root
     common::make_tiny_library(&temp_dir);
     let bad_metadata_path = PathBuf::from("tests/data/bad_metadata_file1/Parliament/Funkentelechy Vs. The Placebo Syndrome/1-03 Wizard Of Finance.mp3");
-    fs::copy(&bad_metadata_path, &temp_dir).expect("Failed to copy bad file in to root");
+    fs::copy(&bad_metadata_path, &temp_dir.path().join("1-03 Wizard of Finance.mp3")).expect("Failed to copy bad file in to root");
     
     // Run add subcommand
     common::run_musicl_get_stdout(&["add", bad_metadata_path.to_str().expect("Failed to strify")], &temp_dir);
@@ -85,7 +85,7 @@ fn add_rejects_path_inside_archive() {
     let temp_dir = tempdir().unwrap();
 
     // Create demo library, place a good file in archive
-    common::make_tiny_library(&temp_dir);
+    common::make_small_library(&temp_dir);
     let demo_good_file_path =  PathBuf::from("tests/data/correctly_located_file1/Pavement/Brighten the Corners/01 Stereo.mp3");
     let good_file_path = temp_dir.path().join("archive/01 Stereo.mp3");
     fs::copy(&demo_good_file_path, &good_file_path).expect("Failed to copy good file in to archive");
@@ -95,7 +95,7 @@ fn add_rejects_path_inside_archive() {
 
     // Assert file not moved, status not changed
     assert!(good_file_path.is_file());
-    common::assert_file_contents_eq(temp_dir.path().join(".musicl/status"), PathBuf::from("tests/data/tiny_library/.musicl/status"))
+    common::assert_file_contents_eq(temp_dir.path().join(".musicl/status"), PathBuf::from("tests/data/small_library/.musicl/status"))
 }
 
 #[test]
