@@ -1,4 +1,4 @@
-use std::io::Write;
+use std::{fs, io::Write};
 
 use tempfile::tempdir;
 
@@ -185,4 +185,26 @@ fn check_reports_bad_metadata() {
     
     // Assert file reported
     assert!(lines_after - lines_before > 0);
+}
+
+#[test]
+fn check_reports_orphaned_lrc() {
+    let temp_dir = tempdir().unwrap();
+
+    // Create demo library
+    common::make_small_library(&temp_dir);
+
+    // Run check subcommand
+    let lines_before = common::run_musicl_get_stdout(&["check"], &temp_dir).lines().count();
+
+    // Add lrc file without mp3 file
+    let lrc_file_path = temp_dir.path().join("library/Fiona Apple/Tidal/06 The First Taste.lrc");
+    fs::create_dir_all(lrc_file_path.parent().expect("Failed to get parent directory")).expect("Failed to create directory for lrc file");
+    fs::File::create(&lrc_file_path).expect("Failed to create lrc file");
+
+    // Run check subcommand
+    let lines_after = common::run_musicl_get_stdout(&["check"], &temp_dir).lines().count();
+    
+    // Assert file reported
+    assert_eq!(lines_after - lines_before, 1);
 }
