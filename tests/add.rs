@@ -23,36 +23,12 @@ fn add_rejects_bad_metadata() {
     common::assert_file_contents_eq(temp_dir.path().join(".musicl/status"), PathBuf::from("tests/data/tiny_library/.musicl/status"))
 }
 
-fn rejects_non_music_file(subcommand: &str) {
-    let temp_dir = tempdir().unwrap();
-
-    // Determine where to place file
-    let destination = match subcommand {
-        "add" => PathBuf::from(temp_dir.path()),
-        "archive" => temp_dir.path().join("library"),
-        "unarchive" => temp_dir.path().join("archive"),
-        "remove" => temp_dir.path().join("library"),
-        _ => panic!("Unimplemented sub-command"),
-    };
-
-    // Create demo library, place a bad file at root
-    common::make_small_library(&temp_dir);
-    let demo_non_music_file_path = PathBuf::from("tests/data/non_music_file.txt");
-    let non_music_file_path = destination.join("non_music_file.txt");
-    fs::copy(&demo_non_music_file_path, &non_music_file_path).expect("Failed to copy non-music file file in to root");
-    
-    // Run add subcommand
-    common::run_musicl_get_stdout(&[subcommand, non_music_file_path.to_str().expect("Failed to strify")], &temp_dir);
-
-    // Assert file not moved, status not changed
-    assert!(non_music_file_path.is_file());
-    common::assert_file_contents_eq(temp_dir.path().join(".musicl/status"), PathBuf::from("tests/data/small_library/.musicl/status"))
-}
-
 #[test]
 fn add_rejects_non_music_file() {
-    rejects_non_music_file("add");
+    common::rejects_non_music_file("add");
 }
+
+
 
 #[test]
 fn add_moves_good_file() {

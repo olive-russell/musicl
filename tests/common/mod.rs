@@ -4,7 +4,7 @@ use std::{fs, path::PathBuf};
 
 use assert_cmd::{Command, assert::Assert};
 use fs_extra::dir;
-use tempfile::TempDir;
+use tempfile::{TempDir, tempdir};
 
 pub fn run_musicl(args: &[&str], temp_dir: &TempDir) -> Assert {
     Command::cargo_bin("musicl")
@@ -111,4 +111,30 @@ pub fn all_but_last_line(path: &PathBuf) -> String {
     let mut lines: Vec<_> = content.lines().collect();
     lines.pop();
     lines.join("\n")
+}
+
+pub fn rejects_non_music_file(subcommand: &str) {
+    let temp_dir = tempdir().unwrap();
+
+    // Determine where to place file
+    let destination = match subcommand {
+        "add" => PathBuf::from(temp_dir.path()),
+        "archive" => temp_dir.path().join("library"),
+        "unarchive" => temp_dir.path().join("archive"),
+        "remove" => temp_dir.path().join("library"),
+        _ => panic!("Unimplemented sub-command"),
+    };
+
+    // Create demo library, place a bad file at root
+    make_small_library(&temp_dir);
+    let demo_non_music_file_path = PathBuf::from("tests/data/non_music_file.txt");
+    let non_music_file_path = destination.join("non_music_file.txt");
+    fs::copy(&demo_non_music_file_path, &non_music_file_path).expect("Failed to copy non-music file file in to root");
+    
+    // Run add subcommand
+    run_musicl_get_stdout(&[subcommand, non_music_file_path.to_str().expect("Failed to strify")], &temp_dir);
+
+    // Assert file not moved, status not changed
+    assert!(non_music_file_path.is_file());
+    assert_file_contents_eq(temp_dir.path().join(".musicl/status"), PathBuf::from("tests/data/small_library/.musicl/status"))
 }
