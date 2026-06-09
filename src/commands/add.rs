@@ -1,6 +1,6 @@
 use anyhow::Result;
 use glob::glob;
-use musicl::is_music_file;
+use musicl::{in_archive, in_library, is_music_file, isrc_in_use, missing_metadata};
 use std::path::PathBuf;
 
 pub fn handle(path: PathBuf) -> Result<()> {
@@ -10,26 +10,26 @@ pub fn handle(path: PathBuf) -> Result<()> {
             Ok(file_path) => {
                 print!("{}: ", file_path.to_str().unwrap());
                 // Check file is not in library or archive
-                if (path_in_library(file_path) || path_in_archive(file_path)) {
+                if in_library(file_path) || in_archive(file_path) {
                     println!("Not added. Path is within library/archive.");
                     continue;
                 }
                 
                 // Check that it is a music file
-                if (!is_music_file(file_path)) {
+                if !is_music_file(file_path) {
                     println!("Not added. Is not a music file.");
                     continue;
                 }
 
                 // Check all required metadata fields are there
                 let missing_metadata = missing_metadata(file_path);
-                if missing_metadata {
+                if missing_metadata.iter().count() != 0 {
                     println!("Not added. Missing metadata: {missing_metadata}");
                     continue;
                 }
 
                 // Check ISRC available
-                if isrc_in_library(file_path) {
+                if isrc_in_use(file_path) {
                     println!("Not added. ISRC already in use.");
                     continue;
                 }
