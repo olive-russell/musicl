@@ -13,7 +13,7 @@ pub fn handle(ctx: &mut Ctx, path: PathBuf) -> Result<()> {
                 print!("{}: ", file_path.to_str().unwrap());
                 // Check file is not in library or archive
                 if (path_in_library(file_path) || path_in_archive(file_path)) {
-                    println!("Not added. Path is within library/archive.")
+                    println!("Not added. Path is within library/archive.");
                     continue;
                 }
                 
@@ -26,7 +26,7 @@ pub fn handle(ctx: &mut Ctx, path: PathBuf) -> Result<()> {
                 // Check all required metadata fields are there
                 let missing_metadata = missing_metadata(file_path);
                 if missing_metadata {
-                    println!("Not added. Is not a music file.");
+                    println!("Not added. Missing metadata: {missing_metadata}");
                     continue;
                 }
 
@@ -36,10 +36,9 @@ pub fn handle(ctx: &mut Ctx, path: PathBuf) -> Result<()> {
                     continue;
                 }
 
-                // Move file in and add to status
+                // Move file in and update status
                 move_music(file_path, "library");
                 println!("Added.");
-                println!("{:?}", path.display())
             }
             Err(e) => println!("{:?}", e),
         }
