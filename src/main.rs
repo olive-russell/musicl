@@ -1,11 +1,8 @@
 mod cli;
 mod commands;
-mod ctx;
-
 use anyhow::{Result};
 use clap::Parser;
 use cli::{Cli, Commands};
-use ctx::Ctx;
 
 fn main() -> Result<()> {
     // Parse CLI
@@ -26,19 +23,14 @@ fn main() -> Result<()> {
                 std::process::exit(1);
             }
 
-            // Establish database connection
-            let mut ctx = Ctx {
-                status_path: status_path,
-            };
-
             // Dispatch subcommand
             match cli.command {
-                Commands::Add{path} => commands::add::handle(&mut ctx, path)?,
-                Commands::Archive{path} => commands::archive::handle(&mut ctx, path)?,
-                Commands::Unarchive{path} => commands::unarchive::handle(&mut ctx, path)?,
-                Commands::Remove{path} => commands::remove::handle(&mut ctx, path)?,
-                Commands::Check{} => commands::check::handle(&mut ctx)?,
-                Commands::Clean{} => commands::clean::handle(&mut ctx)?,
+                Commands::Add{path} => commands::add::handle(path)?,
+                Commands::Archive{path} => commands::archive::handle(path)?,
+                Commands::Unarchive{path} => commands::unarchive::handle(path)?,
+                Commands::Remove{path} => commands::remove::handle(path)?,
+                Commands::Check{} => commands::check::handle()?,
+                Commands::Clean{} => commands::clean::handle()?,
                 _ => unreachable!(),
             }
         }

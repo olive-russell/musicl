@@ -3,9 +3,7 @@ use glob::glob;
 use musicl::is_music_file;
 use std::path::PathBuf;
 
-use crate::ctx::Ctx;
-
-pub fn handle(ctx: &mut Ctx, path: PathBuf) -> Result<()> {
+pub fn handle(path: PathBuf) -> Result<()> {
     // Iterate files
     for file_path in glob(path.to_str().unwrap()).expect("Failed to glob path") {
         match file_path {

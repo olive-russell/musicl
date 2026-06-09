@@ -2,9 +2,7 @@ use anyhow::Result;
 use musicl::is_music_file;
 use std::{path::PathBuf, process::exit};
 
-use crate::ctx::Ctx;
-
-pub fn handle(ctx: &mut Ctx, path: std::path::PathBuf) -> Result<()> {
+pub fn handle(path: std::path::PathBuf) -> Result<()> {
     print!("{}: ", path.to_str().unwrap());
     // Check file is in library
     if !path_in_library(path) {
