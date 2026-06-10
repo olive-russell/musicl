@@ -1,23 +1,20 @@
-use anyhow::Result;
-use musicl::is_music_file;
-use std::{path::PathBuf, process::exit};
+use anyhow::{Result, bail};
+use musicl::{in_archive, in_library, is_music_file, remove_music};
 
 pub fn handle(path: std::path::PathBuf) -> Result<()> {
     print!("{}: ", path.to_str().unwrap());
     // Check file is in library or archive
-    if !(path_in_library(file_path) || path_in_archive(file_path)) {
-        println!("Not removed. Path is not within library/archive.");
-        exit(1);
+    if !(in_library(&path) || in_archive(&path)) {
+        bail!("Not removed. Path is not within library/archive.");
     }
     
     // Check that it is a music file
-    if (!is_music_file(path)) {
-        println!("Not removed. Is not a music file.");
-        exit(1);
+    if !is_music_file(&path) {
+        bail!("Not removed. Is not a music file.");
     }
 
     // Move file in and update status
-    remove_music(path);
+    remove_music(&path);
     println!("Added.");
     Ok(())
 }
