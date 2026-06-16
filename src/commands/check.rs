@@ -1,37 +1,38 @@
 use anyhow::Result;
 use glob::glob;
-use musicl::{find_current_status, get_correct_location, get_current_status_all, get_isrc, get_lrc_files, get_music_files};
+use musicl::{find_current_status, get_correct_location, get_current_status_all, get_isrc, get_lrc_files, get_music_files, get_status_all, get_sublibrary, has_correct_location, sublibrary_from_action};
 
 pub fn handle() -> Result<()> {
     // Get current status of all items (ISRC and sublibrary)
-    let mut current_status_all = get_current_status_all();
+    // let mut current_status_all = get_current_status_all()?;
+    let mut status_all = get_status_all()?;
 
     // Get list of all files across archive and library
-    for path in get_music_files() {
+    for path in get_music_files()? {
         // Get ISRC and check status
-        let isrc = get_isrc(&path);
-        let status = find_current_status(current_status_all, isrc);
+        let isrc = get_isrc(&path).unwrap();
+        let status = find_current_status(isrc);
         
         // If not found report that
-        if (!status) {
+        if status.is_none() {
             println!("{path}: Not found in status.");
             continue;
         }
 
         // If status and folder mismatch
-        if (get_sublibrary(file) != status.tolower()) {
+        if get_sublibrary(&path)? != sublibrary_from_action(status.unwrap().action.as_str()) {
             println!("{path}: In wrong sub-library.");
             continue;
         }
 
         // Check file is in correct place
-        if has_correct_location(&path) {
+        if has_correct_location(&path)? {
             println!("{path}: In wrong location.");
             continue;
         }
         
         // Remove item from status array
-        current_status_all.retain(|&x| x != status);
+        status_all.retain(|&x| x.isrc != isrc);
     }
 
     // Look through lyric files
