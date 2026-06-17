@@ -41,13 +41,13 @@ pub fn add_to_library(path: &PathBuf) -> Result<()> {
     }
 
     // Check ISRC available
-    if isrc_in_use(&path) {
+    if isrc_in_use(&path)? {
         eprintln!("Not added. ISRC already in use.");
         return Ok(());
     }
 
     // Move file in and update status
-    move_music(&path, "add");
+    move_music(&path, "add")?;
     println!("Added.");
     Ok(())
 }

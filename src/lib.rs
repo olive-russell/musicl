@@ -35,14 +35,8 @@ pub fn valid_music_files() -> [&'static str; 1] {
 }
 
 pub fn isrc_in_use(path: &PathBuf) -> Result<bool> {
-    // dev tag: would like current status
-    // let isrc = get_metadata(path)?.isrc.unwrap();
-    // let current_status_all = get_current_status_all()?;
-    // Ok(current_status_all.iter().find(|status| status.isrc == isrc).is_some())
     let isrc = get_isrc(path).unwrap();
-    // let mut status_all = get_status_all()?;
-    // status_all.reverse();
-    let status = find_current_status(isrc);
+    let status = find_current_status(&isrc);
     if status.is_none() || status.unwrap().action == "remove" {
         Ok(true)
     } else {
@@ -50,31 +44,33 @@ pub fn isrc_in_use(path: &PathBuf) -> Result<bool> {
     }
 }
 
-pub fn find_current_status(isrc: String) -> Option<Status> {
-    // current_status_all.iter().find(|&status| status.isrc == isrc).unwrap().isrc.clone()
+pub fn find_current_status(isrc: &String) -> Option<Status> {
     let mut status_all = get_status_all().unwrap();
     status_all.reverse();
-    let status = status_all.into_iter().find(|status| status.isrc == isrc);
+    let status = status_all.into_iter().find(|status| status.isrc == *isrc);
     status
 }
 
 pub fn has_correct_location(path: &PathBuf) -> Result<bool> {
-    Ok(*path == get_correct_location(path, &get_sublibrary(path)?)?)
+    Ok(*path == get_correct_location(path)?)
 }
 
-pub fn get_correct_location(path: &PathBuf, sublibrary: &PathBuf) -> Result<PathBuf> {
+pub fn get_correct_location(path: &PathBuf) -> Result<PathBuf> {
+    // Get metadata, pull out leaf details, also use ISRC to get status to get sublibrary
     let metadata = get_metadata(path).unwrap();
+    let isrc = metadata.isrc.unwrap();
+    let status = find_current_status(&isrc).unwrap();
+    let sublibrary = sublibrary_from_action(status.action.as_str());
+    let disc_string = if metadata.total_discs.is_some() && metadata.total_discs.unwrap() > 1 {format!("{} ", metadata.disc.unwrap())} else {format!("")};
+    let file_name = format!("{}{}.{}", disc_string, metadata.title.unwrap(), path.extension().unwrap().to_str().unwrap());
     let mut new_path = sublibrary.clone();
-    new_path.extend([metadata.artist.unwrap(), metadata.album.unwrap(), format!("{}.{}",metadata.title.unwrap(),path.extension().unwrap().to_str().unwrap())]);
+    new_path.extend([metadata.artist.unwrap(), metadata.album.unwrap(), file_name]);
     Ok(new_path)
-    // PathBuf::from(sublibrary).push(format!("{}/{}/{}/{}.{}", sublibrary, metadata.artist.unwrap(), metadata.album.unwrap(), metadata.title.unwrap(), path.extension().unwrap().to_str().unwrap())))
 }
 
 pub fn move_music(path: &PathBuf, action: &str) -> Result<()> {
-
-
-    move_file(&path, &sublibrary_from_action(action))?;
     update_status(&path, &action)?;
+    move_to_correct_location(&path)?;
     Ok(())
 }
 
@@ -87,14 +83,24 @@ pub fn sublibrary_from_action(action: &str) -> PathBuf {
     }
 }
 
-pub fn remove_music(path: &PathBuf) -> Result<()> {
-    remove_file(path)?;
-    update_status(path, "remove")?;
+// pub fn action_from_sublibrary(sublibrary: &PathBuf) -> &str {
+//     match action {
+//         library_path() => library_path(),
+//         archive_ => archive_path(),
+//         "unarchive" => library_path(),
+//         _ => panic!("Unimplemented sub-command"),
+//     }
+// }
+
+pub fn move_to_correct_location(path: &PathBuf) -> Result<()> {
+    std::fs::rename(path, get_correct_location(path)?)?;
     Ok(())
 }
 
-pub fn move_file(path: &PathBuf, sublibrary: &PathBuf) -> Result<()> {
-    std::fs::rename(path, get_correct_location(path, sublibrary)?)?;
+
+pub fn remove_music(path: &PathBuf) -> Result<()> {
+    remove_file(path)?;
+    update_status(path, "remove")?;
     Ok(())
 }
 
@@ -108,12 +114,6 @@ pub fn update_status(path: &PathBuf, action: &str) -> Result<()> {
     let date = Local::now().format("%Y-%m-%d").to_string();
     write_status(date, &isrc, action)?;
     Ok(())
-}
-
-pub fn get_current_status_all() -> Result<Vec<Status>> {
-    // todo!();
-    let status_all = get_status_all()?;
-    Ok(status_all.into_iter().filter(|status| status.action == "add").collect())
 }
 
 pub fn get_status_all() -> Result<Vec<Status>> {
@@ -227,13 +227,14 @@ pub fn get_metadata(path: &PathBuf) -> Result<Metadata> {
 }
 
 pub fn get_metadata_id3(path: &PathBuf) -> Result<Metadata> {
-    let tag = Tag::read_from_path("testdata/id3v24.id3")?;
+    let tag = Tag::read_from_path(path)?;
 
     Ok(Metadata {
         title: tag.title().map(String::from),
         artist: tag.artist().map(String::from),
         album: tag.album().map(String::from),
         disc: tag.disc(),
+        total_discs: tag.total_discs(),
         track: tag.track(),
         isrc: tag.get("TSRC").and_then(|frame| frame.content().text()).map(str::to_owned),
         has_cover: tag.pictures().next().is_some()
@@ -242,7 +243,7 @@ pub fn get_metadata_id3(path: &PathBuf) -> Result<Metadata> {
 
 #[derive(Debug, Deserialize)]
 pub struct Status {
-    date: String,
+    pub date: String,
     pub isrc: String,
     pub action: String
 }
@@ -252,6 +253,7 @@ pub struct Metadata {
     artist: Option<String>,
     album: Option<String>,
     disc: Option<u32>,
+    total_discs: Option<u32>,
     track: Option<u32>,
     isrc: Option<String>,
     has_cover: bool

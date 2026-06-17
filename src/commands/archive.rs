@@ -1,6 +1,5 @@
 use anyhow::{Result, bail};
 use musicl::{in_library, is_music_file, missing_metadata, move_music};
-use std::{path::PathBuf, process::exit};
 
 pub fn handle(path: std::path::PathBuf) -> Result<()> {
     print!("{}: ", path.to_str().unwrap());
