@@ -1,19 +1,20 @@
-use anyhow::Result;
+use std::{fs, path};
+
+use anyhow::{Result, bail};
 
 pub fn handle() -> Result<()> {
     // If .musicl directory exists, report and exit
-    if std::path::Path::new(".musicl").exists() {
-        print!("Library already exists in working directory.");
-        std::process::exit(1);
+    if path::Path::new(".musicl").exists() {
+        bail!("Library already exists in working directory.");
     }
 
     // Create .musicl directory
-    std::fs::create_dir(".musicl")?;
+    fs::create_dir(".musicl")?;
 
     // Create status file
-    std::fs::File::create(".musicl/status")?;
+    fs::File::create(".musicl/status")?;
 
     // Report back
-    print!("Library created in working directory.");
+    println!("Library created in working directory.");
     Ok(())
 }

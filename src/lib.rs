@@ -38,9 +38,9 @@ pub fn isrc_in_use(path: &PathBuf) -> Result<bool> {
     let isrc = get_isrc(path).unwrap();
     let status = find_current_status(&isrc);
     if status.is_none() || status.unwrap().action == "remove" {
-        Ok(true)
-    } else {
         Ok(false)
+    } else {
+        Ok(true)
     }
 }
 
@@ -93,6 +93,7 @@ pub fn sublibrary_from_action(action: &str) -> PathBuf {
 // }
 
 pub fn move_to_correct_location(path: &PathBuf) -> Result<()> {
+    // bug: never created all this folders
     std::fs::rename(path, get_correct_location(path)?)?;
     Ok(())
 }
@@ -117,9 +118,10 @@ pub fn update_status(path: &PathBuf, action: &str) -> Result<()> {
 }
 
 pub fn get_status_all() -> Result<Vec<Status>> {
+    // bug: where does path go? it used to be stdio by accident
     let mut reader = csv::ReaderBuilder::new()
         .has_headers(false)
-        .from_reader(std::io::stdin());
+        .from_reader(status_path());
 
     let records: Vec<Status> = reader
         .deserialize()
@@ -160,7 +162,11 @@ pub fn get_isrc(path: &PathBuf) -> Option<String> {
 }
 
 pub fn remove_empty_directories(sublibrary: &PathBuf) -> Result<()> {
-    remove_empty_directories_recursive(sublibrary)
+    // bug: needing to make this bit iterative to avoid deleting the actual sublibrary bit
+    for entry in read_dir(sublibrary)? {
+        remove_empty_directories_recursive(entry.unwrap())?
+    }
+    Ok(())
 }
 
 pub fn remove_empty_directories_recursive(path: &PathBuf) -> Result<()> {
