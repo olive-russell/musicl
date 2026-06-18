@@ -1,5 +1,5 @@
 use core::panic;
-use std::{fs::{OpenOptions, read_dir, remove_dir}, io::Write, path::PathBuf};
+use std::{fs::{File, OpenOptions, read_dir, remove_dir}, io::Write, path::PathBuf};
 use anyhow::{anyhow, Result, bail};
 use chrono::Local;
 use glob::glob;
@@ -119,9 +119,10 @@ pub fn update_status(path: &PathBuf, action: &str) -> Result<()> {
 
 pub fn get_status_all() -> Result<Vec<Status>> {
     // bug: where does path go? it used to be stdio by accident
+    let file = File::open(status_path())?;
     let mut reader = csv::ReaderBuilder::new()
         .has_headers(false)
-        .from_reader(status_path());
+        .from_reader(file);
 
     let records: Vec<Status> = reader
         .deserialize()
@@ -164,7 +165,7 @@ pub fn get_isrc(path: &PathBuf) -> Option<String> {
 pub fn remove_empty_directories(sublibrary: &PathBuf) -> Result<()> {
     // bug: needing to make this bit iterative to avoid deleting the actual sublibrary bit
     for entry in read_dir(sublibrary)? {
-        remove_empty_directories_recursive(entry.unwrap())?
+        remove_empty_directories_recursive(&entry.unwrap().path())?
     }
     Ok(())
 }
