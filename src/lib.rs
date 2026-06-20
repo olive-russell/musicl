@@ -1,29 +1,30 @@
 use core::panic;
-use std::{fs::{File, OpenOptions, read_dir, remove_dir}, io::Write, path::PathBuf};
+use std::{fs::{File, OpenOptions, canonicalize, read_dir, remove_dir}, io::Write, path::PathBuf};
 use anyhow::{anyhow, Result, bail};
 use chrono::Local;
 use glob::glob;
 use id3::{Tag, TagLike};
 use serde::Deserialize;
+use filenamify::filenamify;
 
-pub fn in_library(path: &PathBuf) -> bool {
-    path.starts_with(library_path())
+pub fn in_library(path: &PathBuf) -> Result<bool> {
+    Ok(path.starts_with(library_path()?))
 }
 
-pub fn in_archive(path: &PathBuf) -> bool {
-    path.starts_with(archive_path())
+pub fn in_archive(path: &PathBuf) -> Result<bool> {
+    Ok(path.starts_with(archive_path()?))
 }
 
-pub fn library_path() -> PathBuf {
-    PathBuf::from("./library")
+pub fn library_path() -> Result<PathBuf> {
+    Ok(canonicalize(PathBuf::from("./library"))?)
 }
 
-pub fn archive_path() -> PathBuf {
-    PathBuf::from("./archive")
+pub fn archive_path() -> Result<PathBuf> {
+    Ok(canonicalize(PathBuf::from("./archive"))?)
 }
 
-pub fn status_path() -> PathBuf {
-    PathBuf::from("./.musicl/status")
+pub fn status_path() -> Result<PathBuf> {
+    Ok(canonicalize(PathBuf::from("./.musicl/status"))?)
 }
 
 pub fn is_music_file(path: &PathBuf) -> bool {
@@ -74,13 +75,13 @@ pub fn move_music(path: &PathBuf, action: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn sublibrary_from_action(action: &str) -> PathBuf {
-    match action {
-        "add" => library_path(),
-        "archive" => archive_path(),
-        "unarchive" => library_path(),
+pub fn sublibrary_from_action(action: &str) -> Result<PathBuf> {
+    Ok(match action {
+        "add" => library_path()?,
+        "archive" => archive_path()?,
+        "unarchive" => library_path()?,
         _ => panic!("Unimplemented sub-command"),
-    }
+    })
 }
 
 // pub fn action_from_sublibrary(sublibrary: &PathBuf) -> &str {
@@ -119,7 +120,7 @@ pub fn update_status(path: &PathBuf, action: &str) -> Result<()> {
 
 pub fn get_status_all() -> Result<Vec<Status>> {
     // bug: where does path go? it used to be stdio by accident
-    let file = File::open(status_path())?;
+    let file = File::open(status_path()?)?;
     let mut reader = csv::ReaderBuilder::new()
         .has_headers(false)
         .from_reader(file);
@@ -132,7 +133,7 @@ pub fn get_status_all() -> Result<Vec<Status>> {
 }
 
 pub fn write_status(date: String, isrc: &str, action: &str) -> Result<()> {
-    OpenOptions::new().append(true).open(status_path())?
+    OpenOptions::new().append(true).open(status_path()?)?
         .write_all(format!("{},{},{}\n", date, isrc, action).as_bytes())?;
     Ok(())
 }
@@ -163,7 +164,6 @@ pub fn get_isrc(path: &PathBuf) -> Option<String> {
 }
 
 pub fn remove_empty_directories(sublibrary: &PathBuf) -> Result<()> {
-    // bug: needing to make this bit iterative to avoid deleting the actual sublibrary bit
     for entry in read_dir(sublibrary)? {
         remove_empty_directories_recursive(&entry.unwrap().path())?
     }
@@ -185,10 +185,10 @@ pub fn remove_empty_directories_recursive(path: &PathBuf) -> Result<()> {
 }
 
 pub fn get_sublibrary(path: &PathBuf) -> Result<PathBuf> {
-    if path.starts_with(library_path()) {
-        Ok(library_path())
-    } else if path.starts_with(archive_path()) {
-        Ok(archive_path())
+    if path.starts_with(library_path()?) {
+        Ok(library_path()?)
+    } else if path.starts_with(archive_path()?) {
+        Ok(archive_path()?)
     } else {
         Err(anyhow!("Path not in sublibrary."))
     }

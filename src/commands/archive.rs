@@ -4,7 +4,7 @@ use musicl::{in_library, is_music_file, missing_metadata, move_music};
 pub fn handle(path: std::path::PathBuf) -> Result<()> {
     print!("{}: ", path.to_str().unwrap());
     // Check file is in library
-    if !in_library(&path) {
+    if !in_library(&path)? {
         bail!("Not archived. Path is not in library.");
     }
     

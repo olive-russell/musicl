@@ -20,7 +20,7 @@ pub fn handle() -> Result<()> {
         }
 
         // If status and folder mismatch
-        if get_sublibrary(&path)? != sublibrary_from_action(status.unwrap().action.as_str()) {
+        if get_sublibrary(&path)? != sublibrary_from_action(status.unwrap().action.as_str())? {
             println!("{}: In wrong sub-library.", path.to_str().unwrap());
             continue;
         }
@@ -47,7 +47,7 @@ pub fn handle() -> Result<()> {
     // Report remaining status items
     if status_all.len() != 0 {
         for status in status_all {
-            println!("{} is missing from {}", status.isrc, sublibrary_from_action(status.action.as_str()).to_str().unwrap());
+            println!("{} is missing from {}", status.isrc, sublibrary_from_action(status.action.as_str())?.to_str().unwrap());
         }
     }
 
