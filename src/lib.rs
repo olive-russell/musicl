@@ -57,16 +57,29 @@ pub fn has_correct_location(path: &PathBuf) -> Result<bool> {
 }
 
 pub fn get_correct_location(path: &PathBuf) -> Result<PathBuf> {
-    // Get metadata, pull out leaf details, also use ISRC to get status to get sublibrary
+    // Get metadata, pull out leaf details and sanitise
     let metadata = get_metadata(path).unwrap();
+    let artist = filenamify(metadata.artist.unwrap());
+    let album = filenamify(metadata.album.unwrap());
+    let disc_string = if metadata.total_discs.is_some() && metadata.total_discs.unwrap() > 1 {format!("{} ", metadata.disc.unwrap())} else {format!("")};
+    
+    // Get sublibrary
     let isrc = metadata.isrc.unwrap();
     let status = find_current_status(&isrc).unwrap();
-    let sublibrary = sublibrary_from_action(status.action.as_str());
-    let disc_string = if metadata.total_discs.is_some() && metadata.total_discs.unwrap() > 1 {format!("{} ", metadata.disc.unwrap())} else {format!("")};
-    let file_name = format!("{}{}.{}", disc_string, metadata.title.unwrap(), path.extension().unwrap().to_str().unwrap());
-    let mut new_path = sublibrary.clone();
-    new_path.extend([metadata.artist.unwrap(), metadata.album.unwrap(), file_name]);
-    Ok(new_path)
+    let sublibrary = sublibrary_from_action(status.action.as_str())?;
+    
+    // Assemble final path
+    let mut location = sublibrary.clone();
+    let file_name = filenamify(format!("{}{}.{}", disc_string, metadata.title.unwrap(), path.extension().unwrap().to_str().unwrap()));
+    location.extend([artist, album, file_name]);
+
+    // Check still within working directory
+    let working_dir = std::env::current_dir()?.canonicalize()?;
+    if !location.starts_with(&working_dir) {
+        bail!("Destination escapes working directory");
+    }
+
+    Ok(location)
 }
 
 pub fn move_music(path: &PathBuf, action: &str) -> Result<()> {
