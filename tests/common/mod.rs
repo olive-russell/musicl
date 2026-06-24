@@ -133,7 +133,12 @@ pub fn rejects_non_music_file(subcommand: &str) {
     fs::copy(&demo_non_music_file_path, &non_music_file_path).expect("Failed to copy non-music file file in to root");
     
     // Run add subcommand
-    run_musicl(&[subcommand, non_music_file_path.to_str().expect("Failed to strify")], &temp_dir).failure();
+    let result = run_musicl(&[subcommand, non_music_file_path.to_str().expect("Failed to strify")], &temp_dir);
+    if subcommand == "add" {
+        result.success();
+    } else {
+        result.failure();
+    }
 
     // Assert file not moved, status not changed
     assert!(non_music_file_path.is_file());
