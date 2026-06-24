@@ -1,5 +1,5 @@
 use core::panic;
-use std::{fs::{File, OpenOptions, canonicalize, read_dir, remove_dir}, io::Write, path::PathBuf};
+use std::{fs::{File, OpenOptions, read_dir, remove_dir}, io::Write, path::PathBuf};
 use anyhow::{anyhow, Result, bail};
 use chrono::Local;
 use glob::glob;
@@ -16,15 +16,15 @@ pub fn in_archive(path: &PathBuf) -> Result<bool> {
 }
 
 pub fn library_path() -> Result<PathBuf> {
-    Ok(canonicalize(PathBuf::from("./library"))?)
+    Ok(std::env::current_dir()?.join("library"))
 }
 
 pub fn archive_path() -> Result<PathBuf> {
-    Ok(canonicalize(PathBuf::from("./archive"))?)
+    Ok(std::env::current_dir()?.join("archive"))
 }
 
 pub fn status_path() -> Result<PathBuf> {
-    Ok(canonicalize(PathBuf::from("./.musicl/status"))?)
+    Ok(std::env::current_dir()?.join(".musicl").join("status"))
 }
 
 pub fn is_music_file(path: &PathBuf) -> bool {
@@ -74,7 +74,7 @@ pub fn get_correct_location(path: &PathBuf) -> Result<PathBuf> {
     location.extend([artist, album, file_name]);
 
     // Check still within working directory
-    let working_dir = std::env::current_dir()?.canonicalize()?;
+    let working_dir = std::env::current_dir()?;
     if !location.starts_with(&working_dir) {
         bail!("Destination escapes working directory");
     }
@@ -88,11 +88,12 @@ pub fn move_music(path: &PathBuf, action: &str) -> Result<()> {
     Ok(())
 }
 
+
 pub fn sublibrary_from_action(action: &str) -> Result<PathBuf> {
     Ok(match action {
-        "add" => library_path()?,
-        "archive" => archive_path()?,
-        "unarchive" => library_path()?,
+        "add" => library_path(),
+        "archive" => archive_path(),
+        "unarchive" => library_path(),
         _ => panic!("Unimplemented sub-command"),
     })
 }
@@ -198,9 +199,9 @@ pub fn remove_empty_directories_recursive(path: &PathBuf) -> Result<()> {
 }
 
 pub fn get_sublibrary(path: &PathBuf) -> Result<PathBuf> {
-    if path.starts_with(library_path()?) {
+    if in_library(path)? {
         Ok(library_path()?)
-    } else if path.starts_with(archive_path()?) {
+    } else if in_archive(path)? {
         Ok(archive_path()?)
     } else {
         Err(anyhow!("Path not in sublibrary."))
