@@ -1,3 +1,5 @@
+use std::fs::canonicalize;
+
 use anyhow::{Result, bail};
 use musicl::{in_library, is_music_file, missing_metadata, move_music};
 

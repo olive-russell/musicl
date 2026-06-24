@@ -91,9 +91,9 @@ pub fn move_music(path: &PathBuf, action: &str) -> Result<()> {
 
 pub fn sublibrary_from_action(action: &str) -> Result<PathBuf> {
     Ok(match action {
-        "add" => library_path(),
-        "archive" => archive_path(),
-        "unarchive" => library_path(),
+        "add" => library_path()?,
+        "archive" => archive_path()?,
+        "unarchive" => library_path()?,
         _ => panic!("Unimplemented sub-command"),
     })
 }
