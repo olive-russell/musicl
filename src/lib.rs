@@ -108,8 +108,9 @@ pub fn sublibrary_from_action(action: &str) -> Result<PathBuf> {
 // }
 
 pub fn move_to_correct_location(path: &PathBuf) -> Result<()> {
-    // bug: never created all this folders
-    std::fs::rename(path, get_correct_location(path)?)?;
+    let correct_location = get_correct_location(path)?;
+    std::fs::create_dir_all(correct_location.parent().expect("Could not get parent"))?;
+    std::fs::rename(path, correct_location)?;
     Ok(())
 }
 
