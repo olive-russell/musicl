@@ -10,8 +10,8 @@ pub fn handle() -> Result<()> {
     // Get list of all files across archive and library
     for path in get_music_files()? {
         // Get ISRC and check status
-        let isrc = get_isrc(&path).unwrap();
-        let status = find_current_status(&isrc);
+        let isrc = get_isrc(&path)?.unwrap();
+        let status = find_current_status(&isrc).unwrap();
         
         // If not found report that
         if status.is_none() {

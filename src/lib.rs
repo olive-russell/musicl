@@ -1,4 +1,3 @@
-use core::panic;
 use std::{fs::{File, OpenOptions, read_dir, remove_dir}, io::Write, path::PathBuf};
 use anyhow::{anyhow, Result, bail};
 use chrono::Local;
@@ -6,6 +5,9 @@ use glob::glob;
 use id3::{Tag, TagLike};
 use serde::Deserialize;
 use filenamify::filenamify;
+
+#[cfg(test)]
+mod tests;
 
 pub fn in_library(path: &PathBuf) -> Result<bool> {
     Ok(path.starts_with(library_path()?))
@@ -36,8 +38,8 @@ pub fn valid_music_files() -> [&'static str; 1] {
 }
 
 pub fn isrc_in_use(path: &PathBuf) -> Result<bool> {
-    let isrc = get_isrc(path).unwrap();
-    let status = find_current_status(&isrc);
+    let isrc = get_isrc(path)?.unwrap();
+    let status = find_current_status(&isrc)?;
     if status.is_none() || status.unwrap().action == "remove" {
         Ok(false)
     } else {
@@ -45,11 +47,11 @@ pub fn isrc_in_use(path: &PathBuf) -> Result<bool> {
     }
 }
 
-pub fn find_current_status(isrc: &String) -> Option<Status> {
+pub fn find_current_status(isrc: &String) -> Result<Option<Status>> {
     let mut status_all = get_status_all().unwrap();
     status_all.reverse();
     let status = status_all.into_iter().find(|status| status.isrc == *isrc);
-    status
+    Ok(status)
 }
 
 pub fn has_correct_location(path: &PathBuf) -> Result<bool> {
@@ -66,7 +68,7 @@ pub fn get_correct_location(path: &PathBuf) -> Result<PathBuf> {
     // Get sublibrary
     let isrc = metadata.isrc.unwrap();
     let status = find_current_status(&isrc).unwrap();
-    let sublibrary = sublibrary_from_action(status.action.as_str())?;
+    let sublibrary = sublibrary_from_action(status.unwrap().action.as_str())?;
     
     // Assemble final path
     let mut location = sublibrary.clone();
@@ -94,7 +96,7 @@ pub fn sublibrary_from_action(action: &str) -> Result<PathBuf> {
         "add" => library_path()?,
         "archive" => archive_path()?,
         "unarchive" => library_path()?,
-        _ => panic!("Unimplemented sub-command"),
+        _ => bail!("Unimplemented sub-command"),
     })
 }
 
@@ -127,7 +129,7 @@ pub fn remove_file(path: &PathBuf) -> Result<()> {
 }
 
 pub fn update_status(path: &PathBuf, action: &str) -> Result<()> {
-    let isrc = get_isrc(path).unwrap();
+    let isrc = get_isrc(path)?.unwrap();
     let date = Local::now().format("%Y-%m-%d").to_string();
     write_status(date, &isrc, action)?;
     Ok(())
@@ -174,8 +176,8 @@ pub fn get_files_with_extension(extension: &str) -> Result<Vec<PathBuf>>{
     )
 }
 
-pub fn get_isrc(path: &PathBuf) -> Option<String> {
-    get_metadata(path).unwrap().isrc
+pub fn get_isrc(path: &PathBuf) -> Result<Option<String>> {
+    Ok(get_metadata(path)?.isrc)
 }
 
 pub fn remove_empty_directories(sublibrary: &PathBuf) -> Result<()> {
@@ -205,7 +207,7 @@ pub fn get_sublibrary(path: &PathBuf) -> Result<PathBuf> {
     } else if in_archive(path)? {
         Ok(archive_path()?)
     } else {
-        Err(anyhow!("Path not in sublibrary."))
+        Err(anyhow!("'{}' not in sublibrary", path.display()))
     }
 }
 

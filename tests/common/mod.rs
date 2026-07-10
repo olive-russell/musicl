@@ -32,18 +32,21 @@ pub fn make_empty_library(temp_dir: &TempDir) {
     dir::copy("tests/data/empty_library", temp_dir.path(), &options).expect("Failed to create demo empty library.");
 }
 
+// Make sure you update this function in tests.rs too
 pub fn make_tiny_library(temp_dir: &TempDir) {
     let mut options = dir::CopyOptions::new();
     options.content_only = true;
     dir::copy("tests/data/tiny_library", temp_dir.path(), &options).expect("Failed to create demo tiny library.");
 }
 
+// Make sure you update this function in tests.rs too
 pub fn make_small_library(temp_dir: &TempDir) {
     let mut options = dir::CopyOptions::new();
     options.content_only = true;
     dir::copy("tests/data/small_library", temp_dir.path(), &options).expect("Failed to create demo small library.");
 }
 
+// Make sure you update this function in tests.rs too
 pub fn make_medium_library(temp_dir: &TempDir) {
     let mut options = dir::CopyOptions::new();
     options.content_only = true;
