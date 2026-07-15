@@ -203,7 +203,11 @@ pub fn get_isrc(path: &PathBuf) -> Result<Option<String>> {
 
 pub fn remove_empty_directories(sublibrary: &PathBuf) -> Result<()> {
     for entry in read_dir(sublibrary)? {
-        remove_empty_directories_recursive(&entry.unwrap().path())?
+        let entry = entry?;
+        let path = entry.path();
+        if path.is_dir() {
+            remove_empty_directories_recursive(&path)?
+        }
     }
     Ok(())
 }

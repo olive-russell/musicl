@@ -3,12 +3,12 @@ use musicl::{archive_path, get_music_files, has_correct_location, library_path, 
 
 pub fn handle() -> Result<()> {
     // Remove empty folders in library
-    if library_path()?.exists() {
+    if library_path()?.is_dir() {
         remove_empty_directories(&library_path()?)?;
     }
 
     // Remove empty folders in archive
-    if archive_path()?.exists() {
+    if archive_path()?.is_dir() {
         remove_empty_directories(&archive_path()?)?;
     }
 
