@@ -63,7 +63,7 @@ pub fn get_correct_location(path: &PathBuf) -> Result<PathBuf> {
     let metadata = get_metadata(path).unwrap();
     let artist = filenamify(metadata.artist.unwrap());
     let album = filenamify(metadata.album.unwrap());
-    let disc_string = if metadata.total_discs.is_some() && metadata.total_discs.unwrap() > 1 {format!("{} ", metadata.disc.unwrap())} else {format!("")};
+    let disc_string = if metadata.disc.is_some() &&metadata.total_discs.is_some() && metadata.total_discs.unwrap() > 1 {format!("{}-", metadata.disc.unwrap())} else {format!("")};
     
     // Get sublibrary
     let isrc = metadata.isrc.unwrap();
@@ -72,7 +72,7 @@ pub fn get_correct_location(path: &PathBuf) -> Result<PathBuf> {
     
     // Assemble final path
     let mut location = sublibrary.clone();
-    let file_name = filenamify(format!("{}{}.{}", disc_string, metadata.title.unwrap(), path.extension().unwrap().to_str().unwrap()));
+    let file_name = filenamify(format!("{}{:02} {}.{}", disc_string, metadata.track.unwrap(), metadata.title.unwrap(), path.extension().unwrap().to_str().unwrap()));
     location.extend([artist, album, file_name]);
 
     // Check still within working directory
@@ -112,24 +112,33 @@ pub fn sublibrary_from_action(action: &str) -> Result<PathBuf> {
 pub fn move_to_correct_location(path: &PathBuf) -> Result<()> {
     let correct_location = get_correct_location(path)?;
     std::fs::create_dir_all(correct_location.parent().expect("Could not get parent"))?;
-    std::fs::rename(path, correct_location)?;
+    std::fs::rename(path, &correct_location)?;
+    // Move paired lrc file if it exists
+    let lrc_path = path.with_extension("lrc");
+    if lrc_path.exists() {
+        std::fs::rename(&lrc_path, &correct_location.with_extension("lrc"))?;
+    }
     Ok(())
 }
 
-
 pub fn remove_music(path: &PathBuf) -> Result<()> {
-    remove_file(path)?;
     update_status(path, "remove")?;
+    remove_file(path)?;
     Ok(())
 }
 
 pub fn remove_file(path: &PathBuf) -> Result<()> {
     std::fs::remove_file(path)?;
+    // Remove paired lrc file if it exists
+    let lrc_path = path.with_extension("lrc");
+    if lrc_path.exists() {
+        std::fs::remove_file(&lrc_path)?;
+    }
     Ok(())
 }
 
 pub fn update_status(path: &PathBuf, action: &str) -> Result<()> {
-    let isrc = get_isrc(path)?.unwrap();
+    let isrc = get_isrc(path).expect("Could not get ISRC from file").unwrap();
     let date = Local::now().format("%Y-%m-%d").to_string();
     write_status(date, &isrc, action)?;
     Ok(())

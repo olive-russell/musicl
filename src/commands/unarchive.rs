@@ -1,14 +1,14 @@
 use std::fs::canonicalize;
 
 use anyhow::{Result, bail};
-use musicl::{in_library, is_music_file, missing_metadata, move_music};
+use musicl::{in_archive, is_music_file, missing_metadata, move_music};
 
 pub fn handle(path: std::path::PathBuf) -> Result<()> {
     print!("{}: ", path.to_str().unwrap());
     let cpath = canonicalize(path)?;
 
     // Check file is in library
-    if !in_library(&cpath)? {
+    if !in_archive(&cpath)? {
         bail!(format!("{} is not in archive.", cpath.display()));
     }
     

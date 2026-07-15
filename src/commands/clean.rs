@@ -3,8 +3,14 @@ use musicl::{archive_path, get_music_files, has_correct_location, library_path, 
 
 pub fn handle() -> Result<()> {
     // Remove empty folders in library
-    remove_empty_directories(&archive_path()?)?;
-    remove_empty_directories(&library_path()?)?;
+    if library_path()?.exists() {
+        remove_empty_directories(&library_path()?)?;
+    }
+
+    // Remove empty folders in archive
+    if archive_path()?.exists() {
+        remove_empty_directories(&archive_path()?)?;
+    }
 
     // Get list of all files across library and archive
     for path in get_music_files()? {

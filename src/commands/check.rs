@@ -1,5 +1,5 @@
 use anyhow::Result;
-use musicl::{find_current_status, get_isrc, get_lrc_files, get_music_files, get_status_all, get_sublibrary, has_correct_location, sublibrary_from_action};
+use musicl::{find_current_status, get_isrc, get_lrc_files, get_music_files, get_status_all, get_sublibrary, has_correct_location, missing_metadata, sublibrary_from_action, valid_music_files};
 
 pub fn handle() -> Result<()> {
     // Get current status of all items (ISRC and sublibrary)
@@ -8,11 +8,21 @@ pub fn handle() -> Result<()> {
 
     // Get list of all files across archive and library
     for path in get_music_files()? {
-        // Get ISRC and check status
+        // Check for bad metadata
+        let missing_metadata = missing_metadata(&path);
+        if missing_metadata.len() != 0 {
+            println!("{}: Missing metadata ({})", path.to_str().unwrap(), missing_metadata.join(", "));
+            continue
+        }
+
+        // Get ISRC
         let isrc = get_isrc(&path)?.unwrap();
-        let status = find_current_status(&isrc).unwrap();
+        
+        // Remove ISRC from status array
+        status_all.retain(|row| row.isrc != isrc);
         
         // If not found report that
+        let status = find_current_status(&isrc).unwrap();
         if status.is_none() {
             println!("{}: Not found in status.", path.to_str().unwrap());
             continue;
@@ -25,13 +35,10 @@ pub fn handle() -> Result<()> {
         }
 
         // Check file is in correct place
-        if has_correct_location(&path)? {
+        if !has_correct_location(&path)? {
             println!("{}: In wrong location.", path.to_str().unwrap());
             continue;
         }
-        
-        // Remove item from status array
-        status_all.retain(|x| x.isrc != isrc);
     }
 
     // Look through lyric files
@@ -46,7 +53,8 @@ pub fn handle() -> Result<()> {
         }
     }
 
-    // Report remaining status items
+    // Report remaining status items, filtering for unique ISRC
+    status_all.dedup_by(|a, b| a.isrc == b.isrc);
     if status_all.len() != 0 {
         for status in status_all {
             println!("{} is missing from {}", status.isrc, sublibrary_from_action(status.action.as_str())?.to_str().unwrap());
