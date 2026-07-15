@@ -26,6 +26,23 @@ pub fn run_musicl_get_stdout(args: &[&str], temp_dir: &TempDir) -> String {
     String::from_utf8(output.stdout).expect("Failed to parse output to string")
 }
 
+pub fn copy_correctly_located_file1(temp_dir: &TempDir, sub_library: &str) -> PathBuf {
+    // Check path has the sub library
+    let library_path = temp_dir.path().join(sub_library);
+    if !library_path.exists() {
+        print!("Library does not exist in test directory.");
+        std::process::exit(1);
+    }
+
+    // Copy 
+    let mut options = dir::CopyOptions::new();
+    options.content_only = true;
+    dir::copy("tests/data/correctly_located_file1", library_path, &options).expect("Failed to add file to sub library.");
+
+    // Returne the hardcoded path to the mp3
+    temp_dir.path().join("library").join("Pavement/Brighten the Corners/01 Stereo.mp3")
+}
+
 pub fn make_empty_library(temp_dir: &TempDir) {
     let mut options = dir::CopyOptions::new();
     options.content_only = true;
