@@ -1,5 +1,4 @@
 use anyhow::Result;
-use glob::glob;
 use musicl::{find_current_status, get_isrc, get_lrc_files, get_music_files, get_status_all, get_sublibrary, has_correct_location, sublibrary_from_action};
 
 pub fn handle() -> Result<()> {
@@ -38,8 +37,11 @@ pub fn handle() -> Result<()> {
     // Look through lyric files
     for path in get_lrc_files()? {
         // If paired file doesn't exist, report
-        let path_without_extension = path.with_extension("").join(".*");
-        if glob(path_without_extension.to_str().unwrap()).expect("Failed to glob path").count() != 0 {
+        for extension in valid_music_files() {
+            let path_with_extension = path.with_extension(extension);
+            if path_with_extension.exists() {
+                continue;
+            }
             println!("{}: Is orphaned lyric file.", path.to_str().unwrap());
         }
     }

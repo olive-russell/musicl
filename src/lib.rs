@@ -1,10 +1,10 @@
 use std::{fs::{File, OpenOptions, read_dir, remove_dir}, io::Write, path::PathBuf};
 use anyhow::{anyhow, Result, bail};
 use chrono::Local;
-use glob::glob;
 use id3::{Tag, TagLike};
 use serde::Deserialize;
 use filenamify::filenamify;
+use walkdir::WalkDir;
 
 #[cfg(test)]
 mod tests;
@@ -168,12 +168,24 @@ pub fn get_lrc_files() -> Result<Vec<PathBuf>> {
     get_files_with_extension("lrc")
 }
 
-pub fn get_files_with_extension(extension: &str) -> Result<Vec<PathBuf>>{
-    Ok(
-        glob(&format!("**/library/*.{}", extension))?
-        .chain(glob(&format!("**/archive/*.{}", extension))?)
-        .collect::<Result<Vec<_>, _>>()?
-    )
+pub fn get_files_with_extension(extension: &str) -> Result<Vec<PathBuf>> {
+    let mut files = Vec::new();
+
+    for sublibrary in [library_path()?, archive_path()?] {
+        if sublibrary.exists() {
+            for entry in WalkDir::new(sublibrary) {
+                let entry = entry?;
+                let path = entry.path();
+                let entry_extension = path.extension().and_then(|extension| extension.to_str());
+
+                if entry.file_type().is_file() && entry_extension == Some(extension) {
+                    files.push(path.to_path_buf());
+                }
+            }
+        }
+    }
+
+    Ok(files)
 }
 
 pub fn get_isrc(path: &PathBuf) -> Result<Option<String>> {
