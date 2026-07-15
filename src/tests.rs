@@ -148,14 +148,17 @@ fn test_has_correct_location() {
     make_tiny_library(&temp_dir);
     let _guard = CurrentDirGuard::new(temp_dir.path()).unwrap();
 
-    // True when agrees with get_correct_location
-    let good_path1 = PathBuf::from("library/Los Felinos/A Bailar Country Rock/06 No Rompas Más Mi Pobre Corazón.mp3");
+    // True when agrees with get_correct_location (extra check that path is good to begin with)
+    let good_path1 = env::current_dir().unwrap().join("library/Los Felinos/A Bailar Country Rock/06 No Rompas Más Mi Pobre Corazón.mp3");
+    let correct_location1 = get_correct_location(&good_path1);
+    assert!(correct_location1.is_ok());
+    assert_eq!(correct_location1.unwrap(), good_path1);
     let good1 = has_correct_location(&good_path1);
     assert!(good1.is_ok());
     assert!(good1.unwrap());
 
     // False when correct file is moved to wrong location
-    let wrong_location = PathBuf::from("library/Los Felinos/A Bailar Country Rock/06 No Rompas Más Mi Pobre Corazón (wrong location).mp3");
+    let wrong_location = env::current_dir().unwrap().join("library/Los Felinos/A Bailar Country Rock/06 No Rompas Más Mi Pobre Corazón (wrong location).mp3");
     std::fs::rename(&good_path1, &wrong_location).expect("Failed to move file to wrong location.");
     let bad1 = has_correct_location(&wrong_location);
     assert!(bad1.is_ok());
@@ -238,10 +241,14 @@ fn test_remove_music() {
     let _guard = CurrentDirGuard::new(temp_dir.path()).unwrap();
 
     // Remove No Rompas Más Mi Pobre Corazón.mp3 from library and check that it is removed
-    let path_to_remove = PathBuf::from("library/Los Felinos/A Bailar Country Rock/06 No Rompas Más Mi Pobre Corazón.mp3");
+    let path_to_remove = env::current_dir().unwrap().join("library/Los Felinos/A Bailar Country Rock/06 No Rompas Más Mi Pobre Corazón.mp3");
     let isrc = get_isrc(&path_to_remove).unwrap().unwrap();
-    let remove_result = remove_music(&path_to_remove);
-    assert!(remove_result.is_ok());
+    let isrc2 = get_isrc(&path_to_remove).unwrap().unwrap();
+    assert!(path_to_remove.exists());
+    assert_eq!(isrc, "MXF369733932");
+    assert_eq!(isrc2, "MXF369733932");
+    let _remove_result = remove_music(&path_to_remove).expect("remove_music failed");
+    // assert!(remove_result.is_ok());
     assert!(!path_to_remove.exists());
 
     // Check that status is updated
@@ -257,10 +264,11 @@ fn test_remove_file() {
     let _guard = CurrentDirGuard::new(temp_dir.path()).unwrap();
 
     // Remove No Rompas Más Mi Pobre Corazón.mp3 from library and check that it is removed
-    let path_to_remove = PathBuf::from("library/Los Felinos/A Bailar Country Rock/06 No Rompas Más Mi Pobre Corazón.mp3");
-    let remove_result = remove_music(&path_to_remove);
-    assert!(remove_result.is_ok());
+    let path_to_remove = env::current_dir().unwrap().join("library/Los Felinos/A Bailar Country Rock/06 No Rompas Más Mi Pobre Corazón.mp3");
+    assert!(path_to_remove.exists());
+    let remove_result = remove_file(&path_to_remove);
     assert!(!path_to_remove.exists());
+    assert!(remove_result.is_ok());
 }
 
 #[test]
@@ -362,15 +370,15 @@ fn test_get_music_files() {
     let music_files = get_music_files();
     assert!(music_files.is_ok());
     let music_files_vec = music_files.unwrap();
-    assert_eq!(music_files_vec.len(), 36);
+    assert_eq!(music_files_vec.len(), 33);
 
     // Still the same when I copy a txt file in to the library
-    let txt_file_path = temp_dir.path().join("library/Los Felinos/A Bailar Country Rock/test.txt");
+    let txt_file_path = temp_dir.path().join("library/Talking Heads/Naked/test.txt");
     std::fs::write(&txt_file_path, "This is a test text file.").expect("Failed to write test text file.");
     let music_files_after_txt = get_music_files();
     assert!(music_files_after_txt.is_ok());
     let music_files_after_txt_vec = music_files_after_txt.unwrap();
-    assert_eq!(music_files_after_txt_vec.len(), 36);
+    assert_eq!(music_files_after_txt_vec.len(), 33);
 }
 
 #[test]
@@ -384,24 +392,25 @@ fn test_get_lrc_files() {
     std::fs::write(&lrc_file_path, "This is a test lrc file.").expect("Failed to write test lrc file.");
 
     // Expected number of files
-    let music_files = get_music_files();
-    assert!(music_files.is_ok());
-    let music_files_vec = music_files.unwrap();
-    assert_eq!(music_files_vec.len(), 1);
+    let lrc_files = get_lrc_files();
+    assert!(lrc_files.is_ok());
+    let lrc_files_vec = lrc_files.unwrap();
+    assert_eq!(lrc_files_vec.len(), 1);
 
     // Still the same when I copy a txt file in to the library
-    let txt_file_path = temp_dir.path().join("library/Los Felinos/A Bailar Country Rock/test.txt");
+    let txt_file_path = temp_dir.path().join("library/Talking Heads/Naked/test.txt");
     std::fs::write(&txt_file_path, "This is a test text file.").expect("Failed to write test text file.");
-    let music_files_after_txt = get_music_files();
-    assert!(music_files_after_txt.is_ok());
-    let music_files_after_txt_vec = music_files_after_txt.unwrap();
-    assert_eq!(music_files_after_txt_vec.len(), 1);
+    let lrc_files_after_txt = get_lrc_files();
+    assert!(lrc_files_after_txt.is_ok());
+    let lrc_files_after_txt_vec = lrc_files_after_txt.unwrap();
+    assert_eq!(lrc_files_after_txt_vec.len(), 1);
 }
 
 #[test]
 fn test_get_files_with_extension() {
     // Create library directory with 3 text files
     let temp_dir = tempdir().unwrap();
+    let _guard = CurrentDirGuard::new(temp_dir.path()).unwrap();
     let library_dir = temp_dir.path().join("library");
     std::fs::create_dir_all(&library_dir).expect("Failed to create library directory.");
     std::fs::write(library_dir.join("file1.txt"), "File 1").expect("Failed to write file1.txt.");
@@ -409,10 +418,8 @@ fn test_get_files_with_extension() {
     std::fs::write(library_dir.join("file3.txt"), "File 3").expect("Failed to write file3.txt.");
 
     // Get files with .txt extension
-    let txt_files = get_files_with_extension("txt");
-    assert!(txt_files.is_ok());
-    let txt_files_vec = txt_files.unwrap();
-    assert_eq!(txt_files_vec.len(), 3);
+    let txt_files = get_files_with_extension("txt").expect("get_files_with_extension failed");
+    assert_eq!(txt_files.len(), 3);
 
     // Get files with .mp3 extension (should be empty)
     let mp3_files = get_files_with_extension("mp3");

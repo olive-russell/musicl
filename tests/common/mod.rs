@@ -53,40 +53,6 @@ pub fn make_medium_library(temp_dir: &TempDir) {
     dir::copy("tests/data/medium_library", temp_dir.path(), &options).expect("Failed to create demo medium library.");
 }
 
-pub fn copy_correctly_located_file1(temp_dir: &TempDir, sub_library: &str) -> PathBuf {
-    // Check path has the sub library
-    let library_path = temp_dir.path().join(sub_library);
-    if !library_path.exists() {
-        print!("Library does not exist in test directory.");
-        std::process::exit(1);
-    }
-
-    // Copy 
-    let mut options = dir::CopyOptions::new();
-    options.content_only = true;
-    dir::copy("tests/data/correctly_located_file1", library_path, &options).expect("Failed to add file to sub library.");
-
-    // Returne the hardcoded path to the mp3
-    temp_dir.path().join("library").join("Pavement/Brighten the Corners/01 Stereo.mp3")
-}
-
-pub fn copy_bad_metadata_file1(temp_dir: &TempDir, sub_library: &str) -> PathBuf {
-    // Check path has the sub library
-    let library_path = temp_dir.path().join(sub_library);
-    if !library_path.exists() {
-        println!("{sub_library} does not exist in test directory.");
-        std::process::exit(1);
-    }
-
-    // Copy 
-    let mut options = dir::CopyOptions::new();
-    options.content_only = true;
-    dir::copy("tests/data/bad_metadata_file1", library_path, &options).expect("Failed to add file to sub library.");
-
-    // Returne the hardcoded path to the mp3
-    temp_dir.path().join("library").join("Parliament/Funkentelechy Vs. The Placebo Syndrome/1-03 Wizard Of Finance.mp3")
-}
-
 pub fn assert_file_contents_eq(path1: PathBuf, path2: PathBuf) {
     let actual = fs::read_to_string(path1).expect("Couldn't read file at path1.");
     let expected = fs::read_to_string(path2).expect("Couldn't read file at path2");
@@ -106,6 +72,14 @@ pub fn last_line(path: &PathBuf) -> String {
         .last()
         .unwrap_or("")
         .to_string()
+}
+
+pub fn all_lines(path: &PathBuf) -> String {
+    let content = fs::read_to_string(path)
+        .expect("Failed to read file");
+
+    let lines: Vec<_> = content.lines().collect();
+    lines.join("\n")
 }
 
 pub fn all_but_last_line(path: &PathBuf) -> String {
@@ -196,7 +170,7 @@ pub fn updates_status(subcommand: &str) {
     run_musicl(&[subcommand, good_file_path.to_str().expect("Failed to strify")], &temp_dir).success();
 
     // Assert file moved, status changed
-    let correct_status = format!("{},USMTD9719701,Add", Local::now().format("%Y-%m-%d"));
+    let correct_status = format!("{},USMTD9719701,{}", Local::now().format("%Y-%m-%d"), subcommand);
     assert!(!good_file_path.is_file());
     assert_eq!(last_line(&temp_dir.path().join(".musicl/status")), correct_status);
 }
@@ -256,7 +230,7 @@ pub fn only_appends_to_status(subcommand: &str) {
     run_musicl(&[subcommand, good_file_path.to_str().expect("Failed to strify")], &temp_dir).success();
 
     // Assert file moved, status identical besides last line
-    assert_eq!(fs::read_to_string("tests/data/small_library/.musicl/status").expect("Failed to read demo status"), all_but_last_line(&temp_dir.path().join(".musicl/status")));
+    assert_eq!(all_but_last_line(&temp_dir.path().join(".musicl/status")), all_lines(&PathBuf::from("tests/data/small_library/.musicl/status")));
 }
 
 pub fn rejects_path_outside_library(subcommand: &str) {
@@ -306,7 +280,7 @@ pub fn rejects_multiple_files(subcommand: &str) {
     };
 
     // Create demo library, place some good files in a new directory at root
-    make_tiny_library(&temp_dir);
+    make_small_library(&temp_dir);
     let demo_good_file1_path =  PathBuf::from("tests/data/correctly_located_file1/Pavement/Brighten the Corners/01 Stereo.mp3");
     let demo_good_file2_path =  PathBuf::from("tests/data/correctly_located_file2/Fenne Lily/Hypochondriac/01 Hypochondriac.mp3");
     let good_file1_path = destination.join("new/01 Stereo.mp3");
@@ -321,7 +295,7 @@ pub fn rejects_multiple_files(subcommand: &str) {
     // Assert both files rejected, status not updated
     assert!(good_file1_path.is_file());
     assert!(good_file2_path.is_file());
-    assert_file_contents_eq(temp_dir.path().join(".musicl/status"), PathBuf::from("tests/data/tiny_library/.musicl/status"))
+    assert_file_contents_eq(temp_dir.path().join(".musicl/status"), PathBuf::from("tests/data/small_library/.musicl/status"))
 }
 
 pub fn moves_paired_lrc(subcommand: &str) {
@@ -332,6 +306,7 @@ pub fn moves_paired_lrc(subcommand: &str) {
         "add" => PathBuf::from(temp_dir.path()),
         "archive" => temp_dir.path().join("library"),
         "unarchive" => temp_dir.path().join("archive"),
+        "remove" => temp_dir.path().join("library"),
         _ => panic!("Unimplemented sub-command"),
     };
 
@@ -346,17 +321,20 @@ pub fn moves_paired_lrc(subcommand: &str) {
 
     // Run subcommand
     run_musicl(&[subcommand, good_file_path.to_str().expect("Failed to strify")], &temp_dir).success();
-
-    // Determine correct location
-    let correct_location = match subcommand {
-        "add" => "library",
-        "archive" => "archive",
-        "unarchive" => "library",
-        _ => panic!("Unimplemented sub-command"),
-    };
-
+    
     // Assert lrc file moved with mp3 file
     assert!(!lrc_file_path.is_file());
-    let correct_lrc_location = temp_dir.path().join(format!("{}/Fiona Apple/Tidal/06 The First Taste.lrc", correct_location));
-    assert!(correct_lrc_location.is_file());
+    
+    // Check lyric file moved
+    if subcommand != "remove" {
+        // Determine correct location
+        let correct_location = match subcommand {
+            "add" => "library",
+            "archive" => "archive",
+            "unarchive" => "library",
+            _ => panic!("Unimplemented sub-command"),
+        };
+        let correct_lrc_location = temp_dir.path().join(format!("{}/Fiona Apple/Tidal/06 The First Taste.lrc", correct_location));
+        assert!(correct_lrc_location.is_file());
+    }
 }

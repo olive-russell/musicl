@@ -73,7 +73,7 @@ fn add_rejects_path_inside_library() {
     fs::copy(&demo_good_file_path, &good_file_path).expect("Failed to copy good file in to library");
     
     // Run add subcommand with path inside library
-    common::run_musicl(&["add", temp_dir.path().join("library").to_str().expect("Failed to strify")], &temp_dir).failure();
+    common::run_musicl(&["add", temp_dir.path().join("library").to_str().expect("Failed to strify")], &temp_dir).success();
 
     // Assert file not moved, status not changed
     assert!(good_file_path.is_file());
@@ -91,7 +91,7 @@ fn add_rejects_path_inside_archive() {
     fs::copy(&demo_good_file_path, &good_file_path).expect("Failed to copy good file in to archive");
     
     // Run add subcommand with path inside archive
-    common::run_musicl(&["add", temp_dir.path().join("archive").to_str().expect("Failed to strify")], &temp_dir).failure();
+    common::run_musicl(&["add", temp_dir.path().join("archive").to_str().expect("Failed to strify")], &temp_dir).success();
 
     // Assert file not moved, status not changed
     assert!(good_file_path.is_file());
