@@ -9,7 +9,7 @@ pub fn handle(path: std::path::PathBuf) -> Result<()> {
 
     // Check file is in library
     if !in_library(&cpath)? {
-        bail!("Not archived. Path is not in library.");
+        bail!(format!("{} is not in library.", cpath.display()));
     }
     
     // Check that it is a music file

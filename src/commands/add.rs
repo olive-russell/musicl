@@ -22,20 +22,20 @@ pub fn add_to_library(path: &PathBuf) -> Result<()> {
     
     // Check file is not in library or archive
     if in_library(&cpath)? || in_archive(&cpath)? {
-        eprintln!("Not added. Path is within library/archive.");
+        println!("{} is already in library/archive.", cpath.display()); 
         return Ok(());
     }
 
     // Check that it is a music file
     if !is_music_file(&cpath) {
-        eprintln!("Not added. Is not a music file.");
+        println!("Not added. Is not a music file.");
         return Ok(());
     }
 
     // Check all required metadata fields are there
     let missing_metadata = missing_metadata(&cpath);
     if !missing_metadata.is_empty() {
-        eprintln!(
+        println!(
             "Not added. Missing metadata: {}",
             missing_metadata.join(", ")
         );
@@ -44,7 +44,7 @@ pub fn add_to_library(path: &PathBuf) -> Result<()> {
 
     // Check ISRC available
     if isrc_in_use(&cpath)? {
-        eprintln!("Not added. ISRC already in use.");
+        println!("Not added. ISRC already in use.");
         return Ok(());
     }
 
