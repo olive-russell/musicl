@@ -55,6 +55,10 @@ pub fn find_current_status(isrc: &String) -> Result<Option<Status>> {
     Ok(status)
 }
 
+fn normalise(s: &str) -> String {
+    s.nfd().collect()
+}
+
 pub fn has_correct_location(path: &PathBuf) -> Result<bool> {
     Ok(*path == get_correct_location(path)?)
 }
@@ -71,10 +75,14 @@ pub fn get_correct_location(path: &PathBuf) -> Result<PathBuf> {
     let status = find_current_status(&isrc).unwrap();
     let sublibrary = sublibrary_from_action(status.unwrap().action.as_str())?;
     
-    // Assemble final path
+    // Create path components
+    let artist_component = normalise(&artist);
+    let album_component = normalise(&album);
+    let file_name = normalise(&filenamify(format!("{}{:02} {}.{}", disc_string, metadata.track.expect("Could not get track"), metadata.title.expect("Could not get title"), path.extension().unwrap().to_str().unwrap())));
+
+    // Assemble path
     let mut location = sublibrary.clone();
-    let file_name = filenamify(format!("{}{:02} {}.{}", disc_string, metadata.track.expect("Could not get track"), metadata.title.expect("Could not get title"), path.extension().unwrap().to_str().unwrap()));
-    location.extend([artist, album, file_name]);
+    location.extend([artist_component, album_component, file_name]);
 
     // Check still within working directory
     let working_dir = std::env::current_dir()?;
