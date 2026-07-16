@@ -19,6 +19,6 @@ pub fn handle(path: std::path::PathBuf) -> Result<()> {
 
     // Move file in and update status
     remove_music(&cpath)?;
-    println!("Added.");
+    println!("Removed.");
     Ok(())
 }

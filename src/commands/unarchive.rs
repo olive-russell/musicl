@@ -20,12 +20,12 @@ pub fn handle(path: std::path::PathBuf) -> Result<()> {
     // Check all required metadata fields are there
     let missing_metadata = missing_metadata(&cpath);
     if !missing_metadata.is_empty() {
-        bail!("Not archived. Missing: {}.", missing_metadata.join(", "))
+        bail!("Not unarchived. Missing: {}.", missing_metadata.join(", "))
     }
 
 
     // Move file in and update status
     move_music(&cpath, "unarchive")?;
-    println!("Added.");
+    println!("Unarchived.");
     Ok(())
 }

@@ -25,6 +25,6 @@ pub fn handle(path: std::path::PathBuf) -> Result<()> {
 
     // Move file in and update status
     move_music(&cpath, "archive")?;
-    println!("Added.");
+    println!("Archived.");
     Ok(())
 }
