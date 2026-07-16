@@ -242,3 +242,34 @@ fn check_reports_orphaned_lrc() {
     // Assert file reported
     assert_eq!(lines_after - lines_before, 1);
 }
+
+#[test]
+fn check_doesnt_report_removed_files() {
+        let temp_dir = tempdir().unwrap();
+
+    // Create demo library
+    common::make_small_library(&temp_dir);
+
+    // Run check subcommand
+    let out_before = common::run_musicl_get_stdout(&["check"], &temp_dir);
+    let lines_before = out_before.lines().count();
+    println!("lines_before: {lines_before}");
+    println!("stdout_before:\n{out_before}");
+
+    // Remove file, update status
+    let path_to_remove = temp_dir.path().join("library/Talking Heads/Naked/03 Totally Nude.mp3");
+    std::fs::remove_file(path_to_remove).expect("Failed to remove file");
+    let status_path = temp_dir.path().join(".musicl").join("status");
+    let mut file = std::fs::OpenOptions::new().append(true).open(&status_path).expect("Failed to open status file");
+    writeln!(file, "2026-06-06,GB01A0500050,remove").expect("Failed to append to status file");
+    
+
+    // Run check subcommand
+    let out_after = common::run_musicl_get_stdout(&["check"], &temp_dir);
+    let lines_after = out_after.lines().count();
+    println!("lines_after: {lines_after}");
+    println!("stdout_after:\n{out_after}");
+    
+    // Assert file reported
+    assert_eq!(lines_after - lines_before, 0);
+}

@@ -53,8 +53,10 @@ pub fn handle() -> Result<()> {
         }
     }
 
-    // Report remaining status items, filtering for unique ISRC
+    // Report remaining status items, filtering for unique ISRC (do not report removed items as missing)
+    status_all.reverse();
     status_all.dedup_by(|a, b| a.isrc == b.isrc);
+    status_all.retain(|row| row.action != "remove");
     if status_all.len() != 0 {
         for status in status_all {
             println!("{} is missing from {}", status.isrc, sublibrary_from_action(status.action.as_str())?.to_str().unwrap());
