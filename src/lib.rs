@@ -60,7 +60,10 @@ fn normalise(s: &str) -> String {
 }
 
 pub fn has_correct_location(path: &PathBuf) -> Result<bool> {
-    Ok(*path == get_correct_location(path)?)
+    let current = normalise(&path.to_string_lossy().to_lowercase());
+    let correct = normalise(&get_correct_location(path)?.to_string_lossy().to_lowercase());
+
+    Ok(current == correct)
 }
 
 pub fn get_correct_location(path: &PathBuf) -> Result<PathBuf> {
