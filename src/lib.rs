@@ -60,19 +60,19 @@ pub fn has_correct_location(path: &PathBuf) -> Result<bool> {
 
 pub fn get_correct_location(path: &PathBuf) -> Result<PathBuf> {
     // Get metadata, pull out leaf details and sanitise
-    let metadata = get_metadata(path).unwrap();
-    let artist = filenamify(metadata.artist.unwrap());
-    let album = filenamify(metadata.album.unwrap());
-    let disc_string = if metadata.disc.is_some() &&metadata.total_discs.is_some() && metadata.total_discs.unwrap() > 1 {format!("{}-", metadata.disc.unwrap())} else {format!("")};
+    let metadata = get_metadata(path).expect("Could not get metadata");
+    let artist = filenamify(metadata.artist.expect("Could not get artist"));
+    let album = filenamify(metadata.album.expect("Could not get album"));
+    let disc_string = if metadata.disc.is_some() &&metadata.total_discs.is_some() && metadata.total_discs.expect("Could not get total discs") > 1 {format!("{}-", metadata.disc.expect("Could not get disc"))} else {format!("")};
     
     // Get sublibrary
-    let isrc = metadata.isrc.unwrap();
+    let isrc = metadata.isrc.expect("Could not get ISRC");
     let status = find_current_status(&isrc).unwrap();
     let sublibrary = sublibrary_from_action(status.unwrap().action.as_str())?;
     
     // Assemble final path
     let mut location = sublibrary.clone();
-    let file_name = filenamify(format!("{}{:02} {}.{}", disc_string, metadata.track.unwrap(), metadata.title.unwrap(), path.extension().unwrap().to_str().unwrap()));
+    let file_name = filenamify(format!("{}{:02} {}.{}", disc_string, metadata.track.expect("Could not get track"), metadata.title.expect("Could not get title"), path.extension().unwrap().to_str().unwrap()));
     location.extend([artist, album, file_name]);
 
     // Check still within working directory

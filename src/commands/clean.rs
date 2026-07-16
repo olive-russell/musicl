@@ -1,5 +1,5 @@
 use anyhow::Result;
-use musicl::{archive_path, get_music_files, has_correct_location, library_path, move_to_correct_location, remove_empty_directories};
+use musicl::{archive_path, get_music_files, has_correct_location, library_path, missing_metadata, move_to_correct_location, remove_empty_directories};
 
 pub fn handle() -> Result<()> {
     // Remove empty folders in library
@@ -15,7 +15,7 @@ pub fn handle() -> Result<()> {
     // Get list of all files across library and archive
     for path in get_music_files()? {
         // Check file is in correct place
-        if !has_correct_location(&path)? {
+        if missing_metadata(&path).is_empty() && !has_correct_location(&path)? {
             move_to_correct_location(&path)?;
             println!("{}: Moved.", path.to_str().unwrap());
         }
