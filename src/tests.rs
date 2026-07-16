@@ -561,7 +561,7 @@ fn test_get_metadata_id3() {
     let path = PathBuf::from("tests/data/file_with_disc_count/Parliament/Funkentelechy Vs. The Placebo Syndrome/1-03 Wizard Of Finance.mp3");
     let metadata = get_metadata(&path).unwrap();
     assert_eq!(metadata.title.unwrap(), "Wizard Of Finance");
-    assert_eq!(metadata.artist.unwrap(), "Parliament");
+    assert_eq!(metadata.album_artist.unwrap(), "Parliament");
     assert_eq!(metadata.album.unwrap(), "Funkentelechy Vs. The Placebo Syndrome");
     assert_eq!(metadata.disc.unwrap(), 1);
     assert_eq!(metadata.total_discs.unwrap(), 2);

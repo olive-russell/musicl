@@ -5,6 +5,7 @@ use id3::{Tag, TagLike};
 use serde::Deserialize;
 use filenamify::filenamify;
 use walkdir::WalkDir;
+use unicode_normalization::UnicodeNormalization;
 
 #[cfg(test)]
 mod tests;
@@ -61,7 +62,7 @@ pub fn has_correct_location(path: &PathBuf) -> Result<bool> {
 pub fn get_correct_location(path: &PathBuf) -> Result<PathBuf> {
     // Get metadata, pull out leaf details and sanitise
     let metadata = get_metadata(path).expect("Could not get metadata");
-    let artist = filenamify(metadata.artist.expect("Could not get artist"));
+    let artist = filenamify(metadata.album_artist.expect("Could not get artist"));
     let album = filenamify(metadata.album.expect("Could not get album"));
     let disc_string = if metadata.disc.is_some() &&metadata.total_discs.is_some() && metadata.total_discs.expect("Could not get total discs") > 1 {format!("{}-", metadata.disc.expect("Could not get disc"))} else {format!("")};
     
@@ -245,7 +246,7 @@ pub fn missing_metadata(path: &PathBuf) -> Vec<String> {
         missing.push(String::from("title"));
     }
 
-    if metadata.artist.is_none() {
+    if metadata.album_artist.is_none() {
         missing.push(String::from("artist"));
     }
 
@@ -280,7 +281,7 @@ pub fn get_metadata_id3(path: &PathBuf) -> Result<Metadata> {
 
     Ok(Metadata {
         title: tag.title().map(String::from),
-        artist: tag.artist().map(String::from),
+        album_artist: tag.album_artist().map(String::from),
         album: tag.album().map(String::from),
         disc: tag.disc(),
         total_discs: tag.total_discs(),
@@ -299,7 +300,7 @@ pub struct Status {
 
 pub struct Metadata {
     title: Option<String>,
-    artist: Option<String>,
+    album_artist: Option<String>,
     album: Option<String>,
     disc: Option<u32>,
     total_discs: Option<u32>,
